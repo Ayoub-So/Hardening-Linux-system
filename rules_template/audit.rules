@@ -1,0 +1,51 @@
+# First rule - delete all
+-D
+
+# increase the buffers to survive stress events. make this bigger for busy systems.
+-b 1024
+
+# monitor unlink() and rmdir() system calls.
+-a exit,always -S unlink -S rmdir
+
+# monitor open() system call by Linux UID 1001.
+-a exit,always -S open -F loginuid=1001
+
+# monitor write-access and change in file properties (read/write/execute) of the following files.
+-w /etc/group -p wa
+-w /etc/passwd -p wa
+-w /etc/shadow -p wa
+-w /etc/sudoers -p wa
+
+# monitor read-access of the following directory.
+# -w /etc/secret_directory -p r
+
+# Run of insmod , rmmod and modprobe
+-w /sbin/insmod -p x
+-w /sbin/modprobe -p x
+-w /sbin/rmmod -p x
+
+# On recent GNU / Linux distributions , insmod , rmmod and
+# modprobe are symbolic links of kmod
+-w /bin/kmod -p x
+# Log changes in /etc/
+-w /etc/ -p wa
+# Mounting / unmounting monitoring
+-a exit,always -S mount -S umount2
+# Suspicious x86 syscalls calls
+-a exit,always -S ioperm -S modify_ldt
+# Syscalls calls that must be rare and closely monitored
+-a exit,always -S get_kernel_syms -S ptrace
+-a exit,always -S prctl
+
+# Added monitoring for creating or deleting files
+# These rules can have important consequences on the
+# system performance
+-a exit,always -F arch=b64 -S unlink -S rmdir -S rename
+-a exit,always -F arch=b64 -S creat -S open -S openat -F exit=-EACCES
+-a exit,always -F arch=b64 -S truncate -S ftruncate -F exit=-EACCES
+
+# Added monitoring for loading , changing and unloading kernel modules
+-a exit,always -F arch=b64 -S init_module -S delete_module
+-a exit,always -F arch=b64 -S finit_module
+# lock the audit configuration to prevent any modification of this file.
+-e 2
